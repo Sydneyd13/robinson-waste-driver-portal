@@ -1,0 +1,2320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Robinson Waste Driver Portal</title>
+  
+  <!-- Supabase Client Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <style>
+    :root {
+      --primary: #dc2626;
+      --primary-dark: #b91c1c;
+      --primary-light: #fef2f2;
+      --accent: #ef4444;
+      --bg-main: #f8f9fa;
+      --bg-sidebar: #ffffff;
+      --surface: #ffffff;
+      --border: #e5e7eb;
+      --text-primary: #111827;
+      --text-secondary: #6b7280;
+      --text-muted: #9ca3af;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+      --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.08);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg-main);
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+
+    /* Login Screen */
+    .login-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%);
+    }
+
+    .login-card {
+      background: var(--surface);
+      border-radius: 24px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border);
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .login-logo {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      border-radius: 16px;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: white;
+      font-weight: 700;
+    }
+
+    .login-header h1 {
+      font-size: 26px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .login-header p {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .code-input {
+      width: 100%;
+      height: 56px;
+      font-size: 24px;
+      text-align: center;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      letter-spacing: 0.5em;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      background: var(--bg-main);
+    }
+
+    .code-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: white;
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+    }
+
+    .btn-primary {
+      width: 100%;
+      height: 48px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .error-message {
+      background: #fee;
+      border: 1px solid #fcc;
+      color: #c00;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-top: 16px;
+      display: none;
+    }
+
+    .success-message {
+      background: #d1fae5;
+      border: 1px solid #6ee7b7;
+      color: #065f46;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-top: 16px;
+      display: none;
+    }
+
+    /* Main Dashboard Layout */
+    .dashboard-layout {
+      display: none;
+      min-height: 100vh;
+    }
+
+    .dashboard-layout.active {
+      display: flex;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      z-index: 100;
+    }
+
+    .sidebar-header {
+      padding: 24px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .sidebar-logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: white;
+      font-weight: 700;
+    }
+
+    .sidebar-logo-text {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .sidebar-user {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #fee, #fcc);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: var(--primary);
+      font-size: 18px;
+    }
+
+    .user-details h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    .user-details p {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 20px 12px;
+      overflow-y: auto;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-bottom: 4px;
+    }
+
+    .nav-item:hover {
+      background: var(--bg-main);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .nav-icon {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .sidebar-footer {
+      padding: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .btn-logout {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 12px;
+      background: var(--bg-main);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-logout:hover {
+      background: #fee;
+      border-color: #fcc;
+      color: var(--primary);
+    }
+
+    /* Main Content */
+    .main-content {
+      margin-left: 260px;
+      flex: 1;
+      padding: 24px;
+      min-height: 100vh;
+    }
+
+    .content-header {
+      margin-bottom: 32px;
+    }
+
+    .content-header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .content-header p {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    /* Stats Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .stat-card.gradient-red {
+      background: linear-gradient(135deg, #fee2e2 0%, #fca5a5 100%);
+      border: none;
+    }
+
+    .stat-card.gradient-blue {
+      background: linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%);
+      border: none;
+    }
+
+    .stat-card.gradient-green {
+      background: linear-gradient(135deg, #d1fae5 0%, #6ee7b7 100%);
+      border: none;
+    }
+
+    .stat-icon {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 48px;
+      height: 48px;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: rgba(0, 0, 0, 0.6);
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: rgba(0, 0, 0, 0.9);
+      margin-bottom: 12px;
+    }
+
+    .stat-change {
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(0, 0, 0, 0.6);
+    }
+
+    /* Content Card */
+    .content-card {
+      background: white;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 24px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .btn-secondary {
+      padding: 8px 16px;
+      background: var(--bg-main);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* Form Styles */
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .form-helper {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      background: var(--bg-main);
+      transition: all 0.2s ease;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: white;
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+    }
+
+    .form-input:read-only {
+      background: #fafafa;
+      color: var(--text-muted);
+      cursor: not-allowed;
+    }
+
+    .form-textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .form-file {
+      width: 100%;
+      padding: 12px;
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      background: var(--bg-main);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .form-file:hover {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    /* Table */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+
+    .data-table thead {
+      background: var(--bg-main);
+      border-radius: 8px;
+    }
+
+    .data-table th {
+      padding: 12px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+    }
+
+    .data-table th.right {
+      text-align: right;
+    }
+
+    .data-table td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+
+    .data-table td.right {
+      text-align: right;
+    }
+
+    .data-table tbody tr:hover {
+      background: var(--bg-main);
+    }
+
+    /* Summary Box */
+    .summary-box {
+      background: var(--primary-light);
+      border: 1px solid #fecaca;
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 24px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      font-size: 14px;
+    }
+
+    .summary-row.total {
+      border-top: 2px solid var(--primary);
+      margin-top: 12px;
+      padding-top: 16px;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .badge-success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .badge-warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge-info {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+      }
+
+      .sidebar.mobile-open {
+        transform: translateX(0);
+      }
+
+      .main-content {
+        margin-left: 0;
+        padding: 16px;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .content-header h1 {
+        font-size: 24px;
+      }
+
+      .data-table {
+        font-size: 12px;
+      }
+
+      .data-table th,
+      .data-table td {
+        padding: 8px;
+      }
+
+      /* Make filter buttons stack vertically on mobile */
+      div[style*="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr))"] {
+        grid-template-columns: 1fr 1fr !important;
+      }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .view-section {
+      display: none;
+    }
+
+    .view-section.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LOGIN SCREEN -->
+  <div class="login-container" id="loginScreen">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="login-logo">RW</div>
+        <h1>Robinson Waste Portal</h1>
+        <p>Sign in with your email and password</p>
+      </div>
+
+      <div class="form-group">
+        <label>Email</label>
+        <input 
+          type="email" 
+          id="loginEmail" 
+          class="form-input"
+          style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;"
+          placeholder="your@email.com"
+          autocomplete="email"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <input 
+          type="password" 
+          id="loginPassword" 
+          class="form-input"
+          style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;"
+          placeholder="••••••••"
+          autocomplete="current-password"
+          onkeypress="if(event.key==='Enter') handleLogin()"
+        />
+      </div>
+
+      <button class="btn-primary" onclick="handleLogin()">Sign In</button>
+
+      <div class="error-message" id="errorMessage"></div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 24px 32px; border-radius: 12px; text-align: center;">
+      <div style="border: 3px solid var(--border); border-top: 3px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 12px;"></div>
+      <div>Loading...</div>
+    </div>
+  </div>
+
+  <style>
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+
+  <!-- MAIN DASHBOARD -->
+  <div class="dashboard-layout" id="dashboardLayout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="sidebar-logo-icon">RW</div>
+          <span class="sidebar-logo-text">Robinson Waste</span>
+        </div>
+      </div>
+
+      <div class="sidebar-user">
+        <div class="user-info">
+          <div class="user-avatar" id="userAvatar">TT</div>
+          <div class="user-details">
+            <h3 id="userName">Tarrell Thomas</h3>
+            <p>Driver</p>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-item active" onclick="showView('newTicket')">
+          <span class="nav-icon">📝</span>
+          <span>Submit Ticket</span>
+        </div>
+        <div class="nav-item" onclick="showView('dashboard')">
+          <span class="nav-icon">📊</span>
+          <span>Overview</span>
+        </div>
+        <div class="nav-item" onclick="showView('myTickets')">
+          <span class="nav-icon">📋</span>
+          <span>History</span>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="btn-logout" onclick="logout()">
+          <span>🚪</span>
+          <span>Log Out</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      
+      <!-- DASHBOARD VIEW -->
+      <div id="dashboardView" class="view-section active">
+        <div class="content-header">
+          <h1>Dashboard</h1>
+          <p>Welcome back! Here's your weekly overview.</p>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+          <div class="stat-card gradient-red">
+            <div class="stat-icon">🚛</div>
+            <div class="stat-label">Total Loads</div>
+            <div class="stat-value" id="totalLoads">0</div>
+            <div class="stat-change" id="loadsChange">This week</div>
+          </div>
+
+          <div class="stat-card gradient-blue">
+            <div class="stat-icon">⚖️</div>
+            <div class="stat-label">Total Tons</div>
+            <div class="stat-value" id="totalTons">0</div>
+            <div class="stat-change" id="tonsAvg">0 avg per load</div>
+          </div>
+
+          <div class="stat-card gradient-green">
+            <div class="stat-icon">💵</div>
+            <div class="stat-label">Weekly Earnings</div>
+            <div class="stat-value" id="weeklyPay">$0</div>
+            <div class="stat-change" id="payBreakdown">$0 loads + $0 bonus</div>
+          </div>
+        </div>
+
+        <!-- Recent Tickets -->
+        <div class="content-card">
+          <div class="card-header">
+            <h2 class="card-title">Recent Tickets</h2>
+            <button class="btn-secondary" onclick="showView('myTickets')">View All</button>
+          </div>
+
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Ticket #</th>
+                <th>Date</th>
+                <th>Truck</th>
+                <th>Net Tons</th>
+                <th>3rd Load</th>
+                <th class="right">Pay</th>
+              </tr>
+            </thead>
+            <tbody id="recentTicketsBody">
+              <tr>
+                <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                  No tickets submitted yet. Click "Submit Ticket" to add your first load.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- NEW TICKET VIEW -->
+      <div id="newTicketView" class="view-section">
+        <div class="content-header">
+          <h1>Driver Ticket Entry</h1>
+          <p>Submit your load tickets • Track weekly pay</p>
+        </div>
+
+        <div class="content-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div class="badge" style="background: var(--primary-light); color: var(--primary); border: 1px solid #fecaca; font-size: 14px; padding: 8px 16px;">
+              Logged in as: <span id="driverBadgeText">Driver</span>
+            </div>
+          </div>
+
+          <!-- Name input for "Other" drivers -->
+          <div id="otherNameSection" class="hidden" style="margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+              <div style="width: 4px; height: 16px; background: var(--primary); border-radius: 999px;"></div>
+              <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">Enter Your Information</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Full Name (First Last)</label>
+              <input type="text" id="otherDriverName" class="form-input" placeholder="Enter your full name" />
+            </div>
+          </div>
+
+          <!-- Ticket Form -->
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+            <div style="width: 4px; height: 16px; background: var(--primary); border-radius: 999px;"></div>
+            <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">Ticket Information</span>
+          </div>
+
+          <form id="ticketForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Truck Number</label>
+                <select id="truckNumber" class="form-select" required>
+                  <option value="">Select Truck</option>
+                  <option value="Truck 1">Truck 1</option>
+                  <option value="Truck 2">Truck 2</option>
+                  <option value="Truck 3">Truck 3</option>
+                  <option value="Truck 4">Truck 4</option>
+                  <option value="Truck 5">Truck 5</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Ticket Number</label>
+                <input type="text" id="ticketNumber" class="form-input" placeholder="Enter ticket #" required />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Date</label>
+                <input type="date" id="ticketDate" class="form-input" required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Gross Weight (lbs)</label>
+                <input type="text" id="grossWeight" class="form-input" placeholder="Enter lbs" inputmode="numeric" required />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Tare Weight (lbs)</label>
+                <input type="text" id="tareWeight" class="form-input" placeholder="Enter lbs" inputmode="numeric" required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Net Weight (tons)</label>
+                <input type="text" id="netTons" class="form-input" readonly placeholder="Auto-calculated" />
+                <div class="form-helper">Calculated automatically</div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">3rd Load Today?</label>
+                <select id="thirdLoad" class="form-select">
+                  <option value="No">No</option>
+                  <option value="Yes">Yes ($10 bonus)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Route / Notes (Optional)</label>
+                <textarea id="routeNotes" class="form-textarea" placeholder="Any notes about this load..."></textarea>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Ticket Photo</label>
+                <input type="file" id="ticketPhoto" class="form-file" accept="image/*" capture="environment" required />
+                <div class="form-helper">Required: Take a photo of your ticket</div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 8px;">
+              Submit Ticket
+            </button>
+          </form>
+
+          <div class="success-message" id="successMessage">
+            ✓ Ticket submitted successfully!
+          </div>
+        </div>
+
+        <!-- Submitted Tickets Section -->
+        <div id="submittedSection" class="content-card" style="margin-top: 24px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+            <div style="width: 4px; height: 16px; background: var(--primary); border-radius: 999px;"></div>
+            <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">Submitted Tickets</span>
+          </div>
+
+          <!-- Filter Options -->
+          <div style="margin-bottom: 20px; padding: 16px; background: var(--bg-main); border-radius: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+              <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Filter Tickets</span>
+            </div>
+            
+            <!-- Quick Filter Buttons -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; margin-bottom: 12px;">
+              <button class="btn-secondary" onclick="filterSubmittedToday()" style="font-size: 12px; padding: 8px 12px;">Today</button>
+              <button class="btn-secondary" onclick="filterSubmittedThisWeek()" style="font-size: 12px; padding: 8px 12px;">This Week</button>
+              <button class="btn-secondary" onclick="filterSubmittedThisMonth()" style="font-size: 12px; padding: 8px 12px;">This Month</button>
+              <button class="btn-secondary" onclick="filterSubmittedLastMonth()" style="font-size: 12px; padding: 8px 12px;">Last Month</button>
+              <button class="btn-secondary" onclick="filterSubmittedAll()" style="font-size: 12px; padding: 8px 12px;">All Time</button>
+            </div>
+
+            <!-- Custom Date Range -->
+            <div class="form-row" style="margin: 0;">
+              <div class="form-group" style="margin: 0;">
+                <label class="form-label" style="font-size: 11px;">Custom Start Date</label>
+                <input type="date" id="submittedStartDate" class="form-input" style="font-size: 13px; padding: 8px 10px;" onchange="filterSubmittedCustom()" />
+              </div>
+              <div class="form-group" style="margin: 0;">
+                <label class="form-label" style="font-size: 11px;">Custom End Date</label>
+                <input type="date" id="submittedEndDate" class="form-input" style="font-size: 13px; padding: 8px 10px;" onchange="filterSubmittedCustom()" />
+              </div>
+            </div>
+          </div>
+
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Ticket #</th>
+                <th>Date</th>
+                <th>Tons</th>
+                <th>3rd Load</th>
+                <th class="right">Pay</th>
+              </tr>
+            </thead>
+            <tbody id="currentWeekTicketsBody">
+              <tr>
+                <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                  No tickets submitted yet. Submit your first ticket above.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="summary-box" id="currentWeekSummaryBox" style="display: none;">
+            <div class="summary-row">
+              <span>Total Loads:</span>
+              <span id="currentWeekLoads">0</span>
+            </div>
+            <div class="summary-row">
+              <span>Load Pay ($130/load):</span>
+              <span id="currentWeekLoadPay">$0.00</span>
+            </div>
+            <div class="summary-row">
+              <span>Bonus Pay:</span>
+              <span id="currentWeekBonusPay">$0.00</span>
+            </div>
+            <div class="summary-row total">
+              <span>Total Driver Pay:</span>
+              <span id="currentWeekTotalPay">$0.00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MY TICKETS VIEW -->
+      <div id="myTicketsView" class="view-section">
+        <div class="content-header">
+          <h1>Ticket History</h1>
+          <p>View and filter your submitted tickets</p>
+        </div>
+
+        <div class="content-card">
+          <div class="card-header">
+            <h2 class="card-title">Ticket History</h2>
+            <button class="btn-secondary" onclick="resetWeek()">Clear All Tickets</button>
+          </div>
+
+          <!-- Date Filter -->
+          <div class="form-row" style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
+            <div class="form-group">
+              <label class="form-label">Start Date</label>
+              <input type="date" id="filterStartDate" class="form-input" onchange="filterTickets()" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">End Date</label>
+              <input type="date" id="filterEndDate" class="form-input" onchange="filterTickets()" />
+            </div>
+            <div class="form-group" style="display: flex; align-items: flex-end; gap: 8px;">
+              <button class="btn-secondary" onclick="setThisWeek()" style="flex: 1;">This Week</button>
+              <button class="btn-secondary" onclick="setLastWeek()" style="flex: 1;">Last Week</button>
+              <button class="btn-secondary" onclick="clearFilter()" style="flex: 1;">All Time</button>
+            </div>
+          </div>
+
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Ticket #</th>
+                <th>Date</th>
+                <th>Truck</th>
+                <th>Gross</th>
+                <th>Tare</th>
+                <th>Net Tons</th>
+                <th>3rd Load</th>
+                <th class="right">Pay</th>
+              </tr>
+            </thead>
+            <tbody id="allTicketsBody">
+              <tr>
+                <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                  No tickets submitted this week.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="summary-box" id="summaryBox" style="display: none;">
+            <div class="summary-row">
+              <span>Total Loads:</span>
+              <span id="summaryLoads">0</span>
+            </div>
+            <div class="summary-row">
+              <span>Load Pay ($130/load):</span>
+              <span id="summaryLoadPay">$0.00</span>
+            </div>
+            <div class="summary-row">
+              <span>Bonus Pay:</span>
+              <span id="summaryBonusPay">$0.00</span>
+            </div>
+            <div class="summary-row total">
+              <span>Total Driver Pay:</span>
+              <span id="summaryTotalPay">$0.00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADMIN VIEW -->
+      <div id="adminView" class="view-section">
+        <div class="content-header">
+          <h1>Admin Portal</h1>
+          <p>View all driver tickets and generate invoices</p>
+        </div>
+
+        <div class="content-card">
+          <div class="card-header">
+            <h2 class="card-title">Ticket Log - All Drivers</h2>
+          </div>
+
+          <!-- Admin Date Filter -->
+          <div class="form-row" style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
+            <div class="form-group">
+              <label class="form-label">Start Date</label>
+              <input type="date" id="adminFilterStartDate" class="form-input" onchange="filterAdminTickets()" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">End Date</label>
+              <input type="date" id="adminFilterEndDate" class="form-input" onchange="filterAdminTickets()" />
+            </div>
+            <div class="form-group" style="display: flex; align-items: flex-end; gap: 8px;">
+              <button class="btn-secondary" onclick="setAdminThisWeek()" style="flex: 1;">This Week</button>
+              <button class="btn-secondary" onclick="setAdminLastWeek()" style="flex: 1;">Last Week</button>
+              <button class="btn-secondary" onclick="clearAdminFilter()" style="flex: 1;">All Time</button>
+            </div>
+          </div>
+
+          <!-- Driver Filter -->
+          <div class="form-row" style="margin-bottom: 20px;">
+            <div class="form-group">
+              <label class="form-label">Filter by Driver</label>
+              <select id="driverFilter" class="form-select" onchange="filterAdminTickets()">
+                <option value="">All Drivers</option>
+                <option value="Tarrell Thomas">Tarrell Thomas</option>
+                <option value="Jelani Graham">Jelani Graham</option>
+                <option value="Bridger Booth">Bridger Booth</option>
+                <option value="Tristan Booth">Tristan Booth</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Driver</th>
+                <th>Ticket #</th>
+                <th>Date</th>
+                <th>Truck</th>
+                <th>Gross</th>
+                <th>Tare</th>
+                <th>Net Tons</th>
+                <th>3rd Load</th>
+                <th class="right">Pay</th>
+              </tr>
+            </thead>
+            <tbody id="adminTicketsBody">
+              <tr>
+                <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                  No tickets found for selected filters.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="summary-box" id="adminSummaryBox" style="display: none;">
+            <div class="summary-row">
+              <span>Total Tickets:</span>
+              <span id="adminTotalTickets">0</span>
+            </div>
+            <div class="summary-row">
+              <span>Total Loads Pay:</span>
+              <span id="adminLoadPay">$0.00</span>
+            </div>
+            <div class="summary-row">
+              <span>Total Bonus Pay:</span>
+              <span id="adminBonusPay">$0.00</span>
+            </div>
+            <div class="summary-row total">
+              <span>Grand Total:</span>
+              <span id="adminGrandTotal">$0.00</span>
+            </div>
+          </div>
+
+          <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border);">
+            <button class="btn-primary" onclick="generateInvoice()" style="width: 100%;">
+              Generate Invoice for Date Range
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    // ===================================================================
+    // 🔧 SUPABASE CONFIGURATION - UPDATE THESE 2 LINES!
+    // ===================================================================
+    const SUPABASE_URL = 'https://your-project.supabase.co';  // ⬅️ PASTE YOUR URL HERE
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFiY2RlZmdoaWprIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODk1NjYwNzksImV4cCI6MjAwNTE0MjA3OX0.your-long-key-here';  // ⬅️ PASTE YOUR KEY HERE
+    
+    // Initialize Supabase
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    // ===================================================================
+    // GLOBAL STATE
+    // ===================================================================
+    let currentUser = null;
+    let currentUserRole = null;
+    let tickets = [];
+    let isAdmin = false;
+
+    // ===================================================================
+    // AUTHENTICATION & STARTUP
+    // ===================================================================
+    
+    // Check auth on page load
+    checkAuthState();
+    
+    async function checkAuthState() {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        currentUser = session.user;
+        await loadUserRole();
+        
+        if (currentUserRole && currentUserRole.is_active) {
+          showDashboard();
+        } else {
+          showError('Your account is not active. Please contact admin.');
+          await supabase.auth.signOut();
+        }
+      }
+    }
+    
+    async function loadUserRole() {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('id', currentUser.id)
+        .single();
+        
+      if (data) {
+        currentUserRole = data;
+      }
+    }
+    
+    // ===================================================================
+    // LOGIN & LOGOUT
+    // ===================================================================
+    
+    async function handleLogin() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      
+      if (!email || !password) {
+        showError('Please enter email and password');
+        return;
+      }
+      
+      showLoading();
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      hideLoading();
+      
+      if (error) {
+        showError(error.message);
+        return;
+      }
+      
+      currentUser = data.user;
+      await loadUserRole();
+      
+      if (!currentUserRole) {
+        showError('No role found for this user. Please contact admin.');
+        await supabase.auth.signOut();
+        return;
+      }
+      
+      if (!currentUserRole.is_active) {
+        showError('Your account is not active. Please contact admin.');
+        await supabase.auth.signOut();
+        return;
+      }
+      
+      showDashboard();
+    }
+    
+    async function logout() {
+      await supabase.auth.signOut();
+      currentUser = null;
+      currentUserRole = null;
+      tickets = [];
+      location.reload();
+    }
+    
+    function showDashboard() {
+      // Update UI with user info
+      document.getElementById('userName').textContent = currentUserRole.full_name;
+      document.getElementById('userAvatar').textContent = currentUserRole.initials;
+      
+      // Show/hide appropriate views
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('dashboardLayout').classList.add('active');
+      
+      // Route based on role
+      if (currentUserRole.role === 'admin') {
+        isAdmin = true;
+        // Hide driver nav, show admin view
+        document.querySelectorAll('.nav-item').forEach(item => item.style.display = 'none');
+        showView('admin');
+        loadAllDriverTickets();
+      } else {
+        isAdmin = false;
+        // Driver view
+        document.querySelectorAll('.nav-item').forEach(item => item.style.display = 'flex');
+        document.getElementById('driverBadgeText').textContent = currentUserRole.full_name;
+        showView('newTicket');
+        document.getElementById('ticketDate').valueAsDate = new Date();
+        loadTickets();
+      }
+    }
+    
+    // ===================================================================
+    // UTILITY FUNCTIONS
+    // ===================================================================
+    
+    function showLoading() {
+      document.getElementById('loadingOverlay').style.display = 'flex';
+    }
+    
+    function hideLoading() {
+      document.getElementById('loadingOverlay').style.display = 'none';
+    }
+    
+    function showError(message) {
+      const errorMsg = document.getElementById('errorMessage');
+      errorMsg.textContent = message;
+      errorMsg.style.display = 'block';
+      setTimeout(() => {
+        errorMsg.style.display = 'none';
+      }, 4000);
+    }
+    
+    // Driver codes - LEGACY, NOT USED WITH SUPABASE
+    const driverCodes = {
+      '01': { name: 'Tarrell Thomas', initials: 'TT', sheet: 'Tarrell Thomas' },
+      '02': { name: 'Jelani Graham', initials: 'JG', sheet: 'Jelani Graham' },
+      '13': { name: 'Bridger Booth', initials: 'BB', sheet: 'Bridger Booth' },
+      '17': { name: 'Tristan Booth', initials: 'TB', sheet: 'Tristan Booth' },
+      '00': { name: 'Other', initials: 'OT', sheet: 'Other' }
+    };
+
+    let currentDriver = null;
+    let tickets = [];
+    let isAdmin = false;
+
+    // Login
+    function login() {
+      const code = document.getElementById('driverCode').value;
+      const errorMsg = document.getElementById('errorMessage');
+
+      // Check for admin code
+      if (code === '99') {
+        isAdmin = true;
+        document.getElementById('userName').textContent = 'Administrator';
+        document.getElementById('userAvatar').textContent = 'AD';
+        
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('dashboardLayout').classList.add('active');
+        
+        // Hide driver-specific nav items
+        document.querySelectorAll('.nav-item').forEach((item, index) => {
+          item.style.display = 'none'; // Hide all nav items for admin
+        });
+        
+        showView('admin');
+        loadAllDriverTickets();
+        return;
+      }
+
+      if (driverCodes[code]) {
+        isAdmin = false;
+        currentDriver = driverCodes[code];
+        
+        document.getElementById('userName').textContent = currentDriver.name;
+        document.getElementById('userAvatar').textContent = currentDriver.initials;
+        document.getElementById('driverBadgeText').textContent = currentDriver.name;
+        
+        // Show/hide "Other" name section
+        if (currentDriver.name === 'Other') {
+          document.getElementById('otherNameSection').classList.remove('hidden');
+        } else {
+          document.getElementById('otherNameSection').classList.add('hidden');
+        }
+        
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('dashboardLayout').classList.add('active');
+        
+        errorMsg.style.display = 'none';
+        
+        // Show driver nav items
+        document.querySelectorAll('.nav-item').forEach(item => {
+          item.style.display = 'flex';
+        });
+        
+        // Load tickets from localStorage
+        loadTickets();
+        updateDashboard();
+        
+        // Default to "This Week" filter for submitted tickets
+        filterSubmittedThisWeek();
+        
+        // Set today's date
+        document.getElementById('ticketDate').valueAsDate = new Date();
+        
+        // Start on Submit Ticket view
+        showView('newTicket');
+      } else {
+        errorMsg.style.display = 'block';
+        setTimeout(() => {
+          errorMsg.style.display = 'none';
+        }, 3000);
+      }
+    }
+
+    // Logout
+    function logout() {
+      currentDriver = null;
+      tickets = [];
+      isAdmin = false;
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('dashboardLayout').classList.remove('active');
+      document.getElementById('driverCode').value = '';
+      showView('newTicket');
+    }
+
+    // Show view
+    function showView(viewName) {
+      document.querySelectorAll('.view-section').forEach(view => {
+        view.classList.remove('active');
+      });
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+      });
+
+      document.getElementById(viewName + 'View').classList.add('active');
+      
+      if (viewName === 'newTicket') {
+        document.querySelectorAll('.nav-item')[0].classList.add('active');
+      } else if (viewName === 'dashboard') {
+        document.querySelectorAll('.nav-item')[1].classList.add('active');
+      } else if (viewName === 'myTickets') {
+        document.querySelectorAll('.nav-item')[2].classList.add('active');
+      }
+    }
+
+    // Calculate net tons
+    function calculateNetTons() {
+      const grossInput = document.getElementById('grossWeight');
+      const tareInput = document.getElementById('tareWeight');
+      
+      const gross = parseFloat(grossInput.value.replace(/,/g, '')) || 0;
+      const tare = parseFloat(tareInput.value.replace(/,/g, '')) || 0;
+      const netTons = (gross - tare) / 2000;
+      
+      if (gross > 0 && tare > 0) {
+        document.getElementById('netTons').value = netTons.toFixed(2) + ' tons';
+      } else {
+        document.getElementById('netTons').value = '';
+      }
+    }
+
+    // Format numbers with commas
+    function formatNumberWithCommas(input) {
+      let value = input.value.replace(/,/g, '');
+      
+      if (value && !isNaN(value)) {
+        value = parseFloat(value).toLocaleString('en-US');
+        input.value = value;
+      }
+      
+      calculateNetTons();
+    }
+
+    // Load tickets from localStorage
+    
+    // ===================================================================
+    // TICKET OPERATIONS - SUPABASE
+    // ===================================================================
+    
+    async function loadTickets() {
+      if (!currentUser) return;
+      
+      showLoading();
+      
+      try {
+        const { data, error } = await supabase
+          .from('tickets')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .order('ticket_date', { ascending: false });
+
+        if (error) throw error;
+
+        tickets = data || [];
+        updateDashboard();
+        filterSubmittedThisWeek();
+        
+      } catch (err) {
+        console.error('Error loading tickets:', err);
+        showError('Failed to load tickets');
+      } finally {
+        hideLoading();
+      }
+    }
+
+    function saveTickets() {
+      // LEGACY - Not used with Supabase
+      const sheetName = currentDriver ? currentDriver.sheet : 'Unknown';
+      localStorage.setItem('b5_tickets_' + sheetName, JSON.stringify(tickets));
+    }
+
+    function loadTickets_OLD() {
+      const stored = localStorage.getItem('b5_tickets_' + currentDriver.sheet);
+      if (stored) {
+        tickets = JSON.parse(stored);
+      } else {
+        tickets = [];
+      }
+    }
+
+    // Save tickets to localStorage
+    function saveTickets() {
+      localStorage.setItem('b5_tickets_' + currentDriver.sheet, JSON.stringify(tickets));
+    }
+
+    // Submit ticket
+    document.getElementById('ticketForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const truckNumber = document.getElementById('truckNumber').value;
+      const ticketNumber = document.getElementById('ticketNumber').value;
+      const ticketDate = document.getElementById('ticketDate').value;
+      const grossWeight = document.getElementById('grossWeight').value;
+      const tareWeight = document.getElementById('tareWeight').value;
+      const netTons = document.getElementById('netTons').value;
+      const thirdLoad = document.getElementById('thirdLoad').value;
+      const routeNotes = document.getElementById('routeNotes').value;
+      const photoFile = document.getElementById('ticketPhoto').files[0];
+      
+      if (!photoFile) {
+        showError('Please upload a photo of the ticket');
+        return;
+      }
+      
+      showLoading();
+      
+      try {
+        // Upload photo to Supabase Storage
+        const fileName = `${currentUser.id}/${Date.now()}_${ticketNumber}.jpg`;
+        const { error: uploadError } = await supabase.storage
+          .from('ticket-photos')
+          .upload(fileName, photoFile);
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('ticket-photos')
+          .getPublicUrl(fileName);
+
+        // Calculate pay
+        const bonusAmount = thirdLoad === 'Yes' ? 10 : 0;
+        const ticketPay = 130 + bonusAmount;
+
+        // Insert ticket into database
+        const { error: ticketError } = await supabase
+          .from('tickets')
+          .insert([{
+            user_id: currentUser.id,
+            driver_name: currentUserRole.full_name,
+            truck_number: truckNumber,
+            ticket_number: ticketNumber,
+            ticket_date: ticketDate,
+            gross_weight: grossWeight,
+            tare_weight: tareWeight,
+            net_tons: netTons,
+            third_load: thirdLoad,
+            route_notes: routeNotes,
+            pay: ticketPay,
+            photo_url: publicUrl
+          }]);
+
+        if (ticketError) throw ticketError;
+
+        hideLoading();
+
+        // Show success message
+        const successMsg = document.getElementById('successMessage');
+        if (successMsg) {
+          successMsg.textContent = 'Ticket submitted successfully!';
+          successMsg.style.display = 'block';
+          setTimeout(() => {
+            successMsg.style.display = 'none';
+          }, 3000);
+        }
+
+        // Reset form
+        document.getElementById('ticketForm').reset();
+        document.getElementById('ticketDate').valueAsDate = new Date();
+
+        // Reload tickets
+        await loadTickets();
+
+        // Scroll to tickets
+        document.getElementById('submittedSection').scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+
+      } catch (err) {
+        hideLoading();
+        console.error('Error submitting ticket:', err);
+        showError('Failed to submit ticket: ' + err.message);
+      }
+    });
+
+    // OLD Submit ticket - LEGACY
+    function submitTicket_OLD(e) {
+      e.preventDefault();
+      
+      const truckNumber = document.getElementById('truckNumber').value;
+      const ticketNumber = document.getElementById('ticketNumber').value;
+      const ticketDate = document.getElementById('ticketDate').value;
+      const grossWeight = document.getElementById('grossWeight').value;
+      const tareWeight = document.getElementById('tareWeight').value;
+      const netTons = document.getElementById('netTons').value;
+      const thirdLoad = document.getElementById('thirdLoad').value;
+      const routeNotes = document.getElementById('routeNotes').value;
+      
+      // Check if "Other" driver needs to enter name
+      let actualDriverName = currentDriver.name;
+      if (currentDriver.name === 'Other') {
+        actualDriverName = document.getElementById('otherDriverName').value.trim();
+        if (!actualDriverName) {
+          alert('Please enter your full name');
+          return;
+        }
+      }
+      
+      const bonusAmount = thirdLoad === 'Yes' ? 10 : 0;
+      const ticketPay = 130 + bonusAmount;
+      
+      const ticket = {
+        truckNumber,
+        ticketNumber,
+        ticketDate,
+        grossWeight,
+        tareWeight,
+        netTons,
+        thirdLoad,
+        routeNotes,
+        pay: ticketPay,
+        actualDriverName: actualDriverName,
+        timestamp: new Date().toISOString()
+      };
+      
+      tickets.push(ticket);
+      saveTickets();
+      
+      // Show success message
+      const successMsg = document.getElementById('successMessage');
+      successMsg.style.display = 'block';
+      setTimeout(() => {
+        successMsg.style.display = 'none';
+      }, 3000);
+      
+      // Reset form
+      document.getElementById('ticketForm').reset();
+      document.getElementById('ticketDate').valueAsDate = new Date();
+      
+      // Update displays
+      updateDashboard();
+      
+      // Refresh with "This Week" filter
+      filterSubmittedThisWeek();
+      
+      // Scroll to submitted tickets
+      document.getElementById('submittedSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    // Update dashboard
+    function updateDashboard() {
+      const totalLoads = tickets.length;
+      const totalLoadPay = totalLoads * 130;
+      const totalBonusPay = tickets.filter(t => t.thirdLoad === 'Yes').length * 10;
+      const totalPay = totalLoadPay + totalBonusPay;
+      
+      // Calculate total tons
+      let totalTonsValue = 0;
+      tickets.forEach(ticket => {
+        const tons = parseFloat(ticket.net_tons.replace(' tons', '')) || 0;
+        totalTonsValue += tons;
+      });
+      const avgTons = totalLoads > 0 ? (totalTonsValue / totalLoads).toFixed(2) : 0;
+      
+      // Update stats
+      document.getElementById('totalLoads').textContent = totalLoads;
+      document.getElementById('loadsChange').textContent = 'This week';
+      document.getElementById('totalTons').textContent = totalTonsValue.toFixed(2);
+      document.getElementById('tonsAvg').textContent = avgTons + ' avg per load';
+      document.getElementById('weeklyPay').textContent = '$' + totalPay.toLocaleString();
+      document.getElementById('payBreakdown').textContent = '$' + totalLoadPay + ' loads + $' + totalBonusPay + ' bonus';
+      
+      // Update recent tickets table
+      updateRecentTicketsTable();
+      updateAllTicketsTable();
+    }
+
+    // Update recent tickets table
+    function updateRecentTicketsTable() {
+      const tbody = document.getElementById('recentTicketsBody');
+      tbody.innerHTML = '';
+      
+      if (tickets.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">
+              No tickets submitted yet. Click "Submit Ticket" to add your first load.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      // Show last 5 tickets
+      const recentTickets = tickets.slice(-5).reverse();
+      
+      recentTickets.forEach((ticket, index) => {
+        const row = tbody.insertRow();
+        row.innerHTML = `
+          <td>${tickets.length - index}</td>
+          <td>${ticket.ticket_number}</td>
+          <td>${new Date(ticket.ticket_date).toLocaleDateString()}</td>
+          <td>${ticket.truck_number}</td>
+          <td>${ticket.net_tons}</td>
+          <td><span class="badge ${ticket.third_load === 'Yes' ? 'badge-success' : 'badge-info'}">${ticket.third_load}</span></td>
+          <td class="right">$${ticket.pay.toFixed(2)}</td>
+        `;
+      });
+    }
+
+    // Update all tickets table
+    function updateAllTicketsTable() {
+      // Check if there's an active filter
+      const startDate = document.getElementById('filterStartDate').value;
+      const endDate = document.getElementById('filterEndDate').value;
+      
+      if (startDate || endDate) {
+        filterTickets();
+      } else {
+        displayFilteredTickets(tickets);
+      }
+    }
+
+    // Reset week
+    function resetWeek() {
+      if (confirm('Clear all tickets for this driver? This cannot be undone.')) {
+        tickets = [];
+        saveTickets();
+        updateDashboard();
+        document.getElementById('filterStartDate').value = '';
+        document.getElementById('filterEndDate').value = '';
+      }
+    }
+
+    // Update current week tickets (for submit ticket view)
+    function updateCurrentWeekTickets(filteredTickets = null) {
+      const tbody = document.getElementById('currentWeekTicketsBody');
+      tbody.innerHTML = '';
+      
+      const displayTickets = filteredTickets || tickets;
+      
+      if (displayTickets.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted);">
+              No tickets found for selected filter.
+            </td>
+          </tr>
+        `;
+        document.getElementById('currentWeekSummaryBox').style.display = 'none';
+        return;
+      }
+      
+      displayTickets.forEach((ticket, index) => {
+        const row = tbody.insertRow();
+        row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${ticket.ticket_number}</td>
+          <td>${new Date(ticket.ticket_date).toLocaleDateString()}</td>
+          <td>${ticket.net_tons}</td>
+          <td><span class="badge ${ticket.third_load === 'Yes' ? 'badge-success' : 'badge-info'}">${ticket.third_load}</span></td>
+          <td class="right">$${ticket.pay.toFixed(2)}</td>
+        `;
+      });
+      
+      // Update summary
+      const totalLoads = displayTickets.length;
+      const totalLoadPay = totalLoads * 130;
+      const totalBonusPay = displayTickets.filter(t => t.thirdLoad === 'Yes').length * 10;
+      const totalPay = totalLoadPay + totalBonusPay;
+      
+      document.getElementById('currentWeekLoads').textContent = totalLoads;
+      document.getElementById('currentWeekLoadPay').textContent = '$' + totalLoadPay.toFixed(2);
+      document.getElementById('currentWeekBonusPay').textContent = '$' + totalBonusPay.toFixed(2);
+      document.getElementById('currentWeekTotalPay').textContent = '$' + totalPay.toFixed(2);
+      
+      document.getElementById('currentWeekSummaryBox').style.display = 'block';
+    }
+
+    // Filter submitted tickets - Today
+    function filterSubmittedToday() {
+      const today = new Date().toISOString().split('T')[0];
+      const filtered = tickets.filter(t => t.ticket_date === today);
+      updateCurrentWeekTickets(filtered);
+      
+      // Clear custom date inputs
+      document.getElementById('submittedStartDate').value = '';
+      document.getElementById('submittedEndDate').value = '';
+    }
+
+    // Filter submitted tickets - This Week
+    function filterSubmittedThisWeek() {
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const daysToMonday = (dayOfWeek === 0) ? -6 : 1 - dayOfWeek;
+      
+      const monday = new Date(now);
+      monday.setDate(now.getDate() + daysToMonday);
+      const mondayStr = monday.toISOString().split('T')[0];
+      
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      const sundayStr = sunday.toISOString().split('T')[0];
+      
+      const filtered = tickets.filter(t => t.ticket_date >= mondayStr && t.ticket_date <= sundayStr);
+      updateCurrentWeekTickets(filtered);
+      
+      // Clear custom date inputs
+      document.getElementById('submittedStartDate').value = '';
+      document.getElementById('submittedEndDate').value = '';
+    }
+
+    // Filter submitted tickets - This Month
+    function filterSubmittedThisMonth() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      
+      const firstDay = `${year}-${month}-01`;
+      const lastDay = new Date(year, now.getMonth() + 1, 0);
+      const lastDayStr = lastDay.toISOString().split('T')[0];
+      
+      const filtered = tickets.filter(t => t.ticket_date >= firstDay && t.ticket_date <= lastDayStr);
+      updateCurrentWeekTickets(filtered);
+      
+      // Clear custom date inputs
+      document.getElementById('submittedStartDate').value = '';
+      document.getElementById('submittedEndDate').value = '';
+    }
+
+    // Filter submitted tickets - Last Month
+    function filterSubmittedLastMonth() {
+      const now = new Date();
+      const year = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+      const month = now.getMonth() === 0 ? 12 : now.getMonth();
+      const monthStr = String(month).padStart(2, '0');
+      
+      const firstDay = `${year}-${monthStr}-01`;
+      const lastDay = new Date(year, month, 0);
+      const lastDayStr = lastDay.toISOString().split('T')[0];
+      
+      const filtered = tickets.filter(t => t.ticket_date >= firstDay && t.ticket_date <= lastDayStr);
+      updateCurrentWeekTickets(filtered);
+      
+      // Clear custom date inputs
+      document.getElementById('submittedStartDate').value = '';
+      document.getElementById('submittedEndDate').value = '';
+    }
+
+    // Filter submitted tickets - All Time
+    function filterSubmittedAll() {
+      updateCurrentWeekTickets();
+      
+      // Clear custom date inputs
+      document.getElementById('submittedStartDate').value = '';
+      document.getElementById('submittedEndDate').value = '';
+    }
+
+    // Filter submitted tickets - Custom Date Range
+    function filterSubmittedCustom() {
+      const startDate = document.getElementById('submittedStartDate').value;
+      const endDate = document.getElementById('submittedEndDate').value;
+      
+      let filtered = tickets;
+      
+      if (startDate) {
+        filtered = filtered.filter(t => t.ticket_date >= startDate);
+      }
+      
+      if (endDate) {
+        filtered = filtered.filter(t => t.ticket_date <= endDate);
+      }
+      
+      updateCurrentWeekTickets(filtered);
+    }
+
+    // Event listeners
+    document.getElementById('grossWeight').addEventListener('input', function() {
+      formatNumberWithCommas(this);
+    });
+
+    document.getElementById('tareWeight').addEventListener('input', function() {
+      formatNumberWithCommas(this);
+    });
+
+    document.getElementById('driverCode').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') login();
+    });
+
+    // Date filter functions for driver portal
+    function filterTickets() {
+      const startDate = document.getElementById('filterStartDate').value;
+      const endDate = document.getElementById('filterEndDate').value;
+      
+      let filteredTickets = tickets;
+      
+      if (startDate) {
+        filteredTickets = filteredTickets.filter(t => t.ticket_date >= startDate);
+      }
+      
+      if (endDate) {
+        filteredTickets = filteredTickets.filter(t => t.ticket_date <= endDate);
+      }
+      
+      displayFilteredTickets(filteredTickets);
+    }
+
+    function displayFilteredTickets(filteredTickets) {
+      const tbody = document.getElementById('allTicketsBody');
+      tbody.innerHTML = '';
+      
+      if (filteredTickets.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-muted);">
+              No tickets found for selected dates.
+            </td>
+          </tr>
+        `;
+        document.getElementById('summaryBox').style.display = 'none';
+        return;
+      }
+      
+      filteredTickets.forEach((ticket, index) => {
+        const row = tbody.insertRow();
+        row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${ticket.ticket_number}</td>
+          <td>${new Date(ticket.ticket_date).toLocaleDateString()}</td>
+          <td>${ticket.truck_number}</td>
+          <td>${ticket.gross_weight}</td>
+          <td>${ticket.tare_weight}</td>
+          <td>${ticket.net_tons}</td>
+          <td><span class="badge ${ticket.third_load === 'Yes' ? 'badge-success' : 'badge-info'}">${ticket.third_load}</span></td>
+          <td class="right">$${ticket.pay.toFixed(2)}</td>
+        `;
+      });
+      
+      // Update summary
+      const totalLoads = filteredTickets.length;
+      const totalLoadPay = totalLoads * 130;
+      const totalBonusPay = filteredTickets.filter(t => t.thirdLoad === 'Yes').length * 10;
+      const totalPay = totalLoadPay + totalBonusPay;
+      
+      document.getElementById('summaryLoads').textContent = totalLoads;
+      document.getElementById('summaryLoadPay').textContent = '$' + totalLoadPay.toFixed(2);
+      document.getElementById('summaryBonusPay').textContent = '$' + totalBonusPay.toFixed(2);
+      document.getElementById('summaryTotalPay').textContent = '$' + totalPay.toFixed(2);
+      
+      document.getElementById('summaryBox').style.display = 'block';
+    }
+
+    function setThisWeek() {
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const daysToMonday = (dayOfWeek === 0) ? -6 : 1 - dayOfWeek;
+      
+      const monday = new Date(now);
+      monday.setDate(now.getDate() + daysToMonday);
+      
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      
+      document.getElementById('filterStartDate').value = monday.toISOString().split('T')[0];
+      document.getElementById('filterEndDate').value = sunday.toISOString().split('T')[0];
+      
+      filterTickets();
+    }
+
+    function setLastWeek() {
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const daysToMonday = (dayOfWeek === 0) ? -6 : 1 - dayOfWeek;
+      
+      const thisMonday = new Date(now);
+      thisMonday.setDate(now.getDate() + daysToMonday);
+      
+      const lastMonday = new Date(thisMonday);
+      lastMonday.setDate(thisMonday.getDate() - 7);
+      
+      const lastSunday = new Date(lastMonday);
+      lastSunday.setDate(lastMonday.getDate() + 6);
+      
+      document.getElementById('filterStartDate').value = lastMonday.toISOString().split('T')[0];
+      document.getElementById('filterEndDate').value = lastSunday.toISOString().split('T')[0];
+      
+      filterTickets();
+    }
+
+    function clearFilter() {
+      document.getElementById('filterStartDate').value = '';
+      document.getElementById('filterEndDate').value = '';
+      filterTickets();
+    }
+
+    // Admin functions
+    async function loadAllDriverTickets() {
+      // Load tickets from all drivers (admin view)
+      showLoading();
+      
+      try {
+        const { data, error } = await supabase
+          .from('tickets')
+          .select('*')
+          .order('ticket_date', { ascending: false });
+
+        if (error) throw error;
+
+        // Store in global variable
+        window.allDriverTickets = data || [];
+        
+        // Display
+        filterAdminTickets();
+        
+      } catch (err) {
+        console.error('Error loading all tickets:', err);
+        showError('Failed to load tickets');
+        window.allDriverTickets = [];
+      } finally {
+        hideLoading();
+      }
+    }
+    
+    function loadAllDriverTickets_OLD() {
+      // Load tickets from all drivers
+      const allTickets = [];
+      
+      Object.values(driverCodes).forEach(driver => {
+        const stored = localStorage.getItem('b5_tickets_' + driver.sheet);
+        if (stored) {
+          const driverTickets = JSON.parse(stored);
+          driverTickets.forEach(ticket => {
+            allTickets.push({
+              ...ticket,
+              driverName: driver.name
+            });
+          });
+        }
+      });
+      
+      // Sort by date (newest first)
+      allTickets.sort((a, b) => new Date(b.ticketDate) - new Date(a.ticketDate));
+      
+      // Store in global variable
+      window.allDriverTickets = allTickets;
+      
+      // Display
+      filterAdminTickets();
+    }
+
+    function filterAdminTickets() {
+      const startDate = document.getElementById('adminFilterStartDate').value;
+      const endDate = document.getElementById('adminFilterEndDate').value;
+      const driverFilter = document.getElementById('driverFilter').value;
+      
+      let filteredTickets = window.allDriverTickets || [];
+      
+      if (startDate) {
+        filteredTickets = filteredTickets.filter(t => t.ticket_date >= startDate);
+      }
+      
+      if (endDate) {
+        filteredTickets = filteredTickets.filter(t => t.ticket_date <= endDate);
+      }
+      
+      if (driverFilter) {
+        filteredTickets = filteredTickets.filter(t => t.driver_name === driverFilter);
+      }
+      
+      displayAdminTickets(filteredTickets);
+    }
+
+    function displayAdminTickets(filteredTickets) {
+      const tbody = document.getElementById('adminTicketsBody');
+      tbody.innerHTML = '';
+      
+      if (filteredTickets.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-muted);">
+              No tickets found for selected filters.
+            </td>
+          </tr>
+        `;
+        document.getElementById('adminSummaryBox').style.display = 'none';
+        return;
+      }
+      
+      filteredTickets.forEach((ticket, index) => {
+        const row = tbody.insertRow();
+        row.innerHTML = `
+          <td>${ticket.driver_name}</td>
+          <td>${ticket.ticket_number}</td>
+          <td>${new Date(ticket.ticket_date).toLocaleDateString()}</td>
+          <td>${ticket.truck_number}</td>
+          <td>${ticket.gross_weight}</td>
+          <td>${ticket.tare_weight}</td>
+          <td>${ticket.net_tons}</td>
+          <td><span class="badge ${ticket.third_load === 'Yes' ? 'badge-success' : 'badge-info'}">${ticket.third_load}</span></td>
+          <td class="right">$${ticket.pay.toFixed(2)}</td>
+        `;
+      });
+      
+      // Update summary
+      const totalLoads = filteredTickets.length;
+      const totalLoadPay = totalLoads * 130;
+      const totalBonusPay = filteredTickets.filter(t => t.thirdLoad === 'Yes').length * 10;
+      const totalPay = totalLoadPay + totalBonusPay;
+      
+      document.getElementById('adminTotalTickets').textContent = totalLoads;
+      document.getElementById('adminLoadPay').textContent = '$' + totalLoadPay.toFixed(2);
+      document.getElementById('adminBonusPay').textContent = '$' + totalBonusPay.toFixed(2);
+      document.getElementById('adminGrandTotal').textContent = '$' + totalPay.toFixed(2);
+      
+      document.getElementById('adminSummaryBox').style.display = 'block';
+    }
+
+    function setAdminThisWeek() {
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const daysToMonday = (dayOfWeek === 0) ? -6 : 1 - dayOfWeek;
+      
+      const monday = new Date(now);
+      monday.setDate(now.getDate() + daysToMonday);
+      
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      
+      document.getElementById('adminFilterStartDate').value = monday.toISOString().split('T')[0];
+      document.getElementById('adminFilterEndDate').value = sunday.toISOString().split('T')[0];
+      
+      filterAdminTickets();
+    }
+
+    function setAdminLastWeek() {
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const daysToMonday = (dayOfWeek === 0) ? -6 : 1 - dayOfWeek;
+      
+      const thisMonday = new Date(now);
+      thisMonday.setDate(now.getDate() + daysToMonday);
+      
+      const lastMonday = new Date(thisMonday);
+      lastMonday.setDate(thisMonday.getDate() - 7);
+      
+      const lastSunday = new Date(lastMonday);
+      lastSunday.setDate(lastMonday.getDate() + 6);
+      
+      document.getElementById('adminFilterStartDate').value = lastMonday.toISOString().split('T')[0];
+      document.getElementById('adminFilterEndDate').value = lastSunday.toISOString().split('T')[0];
+      
+      filterAdminTickets();
+    }
+
+    function clearAdminFilter() {
+      document.getElementById('adminFilterStartDate').value = '';
+      document.getElementById('adminFilterEndDate').value = '';
+      document.getElementById('driverFilter').value = '';
+      filterAdminTickets();
+    }
+
+    async function generateInvoice() {
+      const startDate = document.getElementById('adminFilterStartDate').value;
+      const endDate = document.getElementById('adminFilterEndDate').value;
+      const fuelBase = 3.50; // Default fuel base rate
+      const fuelCurrent = 4.25; // Default current fuel rate
+      
+      if (!startDate || !endDate) {
+        showError('Please select a date range first');
+        return;
+      }
+      
+      if (!confirm(`Generate invoice for ${startDate} to ${endDate}?`)) {
+        return;
+      }
+      
+      showLoading();
+      
+      try {
+        const { data, error } = await supabase.rpc('create_invoice', {
+          p_date_start: startDate,
+          p_date_end: endDate,
+          p_fuel_base: fuelBase,
+          p_fuel_current: fuelCurrent,
+          p_created_by: currentUser.id
+        });
+        
+        if (error) throw error;
+        
+        hideLoading();
+        alert(`Invoice generated successfully! Invoice ID: ${data}`);
+        
+        // Reload tickets to refresh display
+        await loadAllDriverTickets();
+        
+      } catch (err) {
+        hideLoading();
+        console.error('Error generating invoice:', err);
+        showError('Failed to generate invoice: ' + err.message);
+      }
+    }
+    
+    function generateInvoice_OLD() {
+      const startDate = document.getElementById('adminFilterStartDate').value;
+      const endDate = document.getElementById('adminFilterEndDate').value;
+      
+      if (!startDate || !endDate) {
+        alert('Please select a date range first');
+        return;
+      }
+      
+      // Get filtered tickets
+      const driverFilter = document.getElementById('driverFilter').value;
+      let invoiceTickets = window.allDriverTickets || [];
+      
+      if (startDate) {
+        invoiceTickets = invoiceTickets.filter(t => t.ticket_date >= startDate);
+      }
+      
+      if (endDate) {
+        invoiceTickets = invoiceTickets.filter(t => t.ticket_date <= endDate);
+      }
+      
+      if (driverFilter) {
+        invoiceTickets = invoiceTickets.filter(t => t.driverName === driverFilter);
+      }
+      
+      if (invoiceTickets.length === 0) {
+        alert('No tickets found for the selected date range');
+        return;
+      }
+      
+      const totalPay = invoiceTickets.reduce((sum, t) => sum + t.pay, 0);
+      
+      const confirmMsg = `Generate invoice for ${invoiceTickets.length} tickets?\n` +
+                        `Date Range: ${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}\n` +
+                        `Total: $${totalPay.toFixed(2)}`;
+      
+      if (confirm(confirmMsg)) {
+        alert('Invoice generation ready! (Will connect to invoice generator next)');
+        // TODO: Connect to invoice generator
+      }
+    }
+  </script>
+
+</body>
+</html>
