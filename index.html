@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -700,7 +701,7 @@
   <div class="login-container" id="loginScreen">
     <div class="login-card">
       <div class="login-header">
-        <div class="login-logo">RW</div>
+        <div class="login-logo">B5</div>
         <h1>Robinson Waste Portal</h1>
         <p>Sign in with your email and password</p>
       </div>
@@ -757,7 +758,7 @@
     <aside class="sidebar">
       <div class="sidebar-header">
         <div class="sidebar-logo">
-          <div class="sidebar-logo-icon">RW</div>
+          <div class="sidebar-logo-icon">B5</div>
           <span class="sidebar-logo-text">Robinson Waste</span>
         </div>
       </div>
@@ -1381,90 +1382,11 @@
       '00': { name: 'Other', initials: 'OT', sheet: 'Other' }
     };
 
-    let currentDriver = null;
-    let tickets = [];
-    let isAdmin = false;
-
-    // Login
-    function login() {
-      const code = document.getElementById('driverCode').value;
-      const errorMsg = document.getElementById('errorMessage');
-
-      // Check for admin code
-      if (code === '99') {
-        isAdmin = true;
-        document.getElementById('userName').textContent = 'Administrator';
-        document.getElementById('userAvatar').textContent = 'AD';
-        
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('dashboardLayout').classList.add('active');
-        
-        // Hide driver-specific nav items
-        document.querySelectorAll('.nav-item').forEach((item, index) => {
-          item.style.display = 'none'; // Hide all nav items for admin
-        });
-        
-        showView('admin');
-        loadAllDriverTickets();
-        return;
-      }
-
-      if (driverCodes[code]) {
-        isAdmin = false;
-        currentDriver = driverCodes[code];
-        
-        document.getElementById('userName').textContent = currentDriver.name;
-        document.getElementById('userAvatar').textContent = currentDriver.initials;
-        document.getElementById('driverBadgeText').textContent = currentDriver.name;
-        
-        // Show/hide "Other" name section
-        if (currentDriver.name === 'Other') {
-          document.getElementById('otherNameSection').classList.remove('hidden');
-        } else {
-          document.getElementById('otherNameSection').classList.add('hidden');
-        }
-        
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('dashboardLayout').classList.add('active');
-        
-        errorMsg.style.display = 'none';
-        
-        // Show driver nav items
-        document.querySelectorAll('.nav-item').forEach(item => {
-          item.style.display = 'flex';
-        });
-        
-        // Load tickets from localStorage
-        loadTickets();
-        updateDashboard();
-        
-        // Default to "This Week" filter for submitted tickets
-        filterSubmittedThisWeek();
-        
-        // Set today's date
-        document.getElementById('ticketDate').valueAsDate = new Date();
-        
-        // Start on Submit Ticket view
-        showView('newTicket');
-      } else {
-        errorMsg.style.display = 'block';
-        setTimeout(() => {
-          errorMsg.style.display = 'none';
-        }, 3000);
-      }
-    }
-
-    // Logout
-    function logout() {
-      currentDriver = null;
-      tickets = [];
-      isAdmin = false;
-      document.getElementById('loginScreen').style.display = 'flex';
-      document.getElementById('dashboardLayout').classList.remove('active');
-      document.getElementById('driverCode').value = '';
-      showView('newTicket');
-    }
-
+    // ===================================================================
+    // ===================================================================
+    // VIEW MANAGEMENT
+    // ===================================================================
+    
     // Show view
     function showView(viewName) {
       document.querySelectorAll('.view-section').forEach(view => {
