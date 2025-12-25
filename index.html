@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -674,6 +675,11 @@
       .data-table td {
         padding: 8px;
       }
+
+      /* Make filter buttons stack vertically on mobile */
+      div[style*="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr))"] {
+        grid-template-columns: 1fr 1fr !important;
+      }
     }
 
     .hidden {
@@ -686,11 +692,6 @@
 
     .view-section.active {
       display: block;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
     }
   </style>
 </head>
@@ -726,6 +727,7 @@
           style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;"
           placeholder="••••••••"
           autocomplete="current-password"
+          onkeypress="if(event.key==='Enter') handleLogin()"
         />
       </div>
 
@@ -742,6 +744,13 @@
       <div>Loading...</div>
     </div>
   </div>
+
+  <style>
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
 
   <!-- MAIN DASHBOARD -->
   <div class="dashboard-layout" id="dashboardLayout">
@@ -862,6 +871,18 @@
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <div class="badge" style="background: var(--primary-light); color: var(--primary); border: 1px solid #fecaca; font-size: 14px; padding: 8px 16px;">
               Logged in as: <span id="driverBadgeText">Driver</span>
+            </div>
+          </div>
+
+          <!-- Name input for "Other" drivers -->
+          <div id="otherNameSection" class="hidden" style="margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+              <div style="width: 4px; height: 16px; background: var(--primary); border-radius: 999px;"></div>
+              <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">Enter Your Information</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Full Name (First Last)</label>
+              <input type="text" id="otherDriverName" class="form-input" placeholder="Enter your full name" />
             </div>
           </div>
 
@@ -1202,8 +1223,8 @@
     // ===================================================================
     // 🔧 SUPABASE CONFIGURATION - UPDATE THESE 2 LINES!
     // ===================================================================
-    const SUPABASE_URL = 'https://dyqxvnwqyplssfilgdqc.supabase.co ';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5cXh2bndxeXBsc3NmaWxnZHFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1Mjk4NDcsImV4cCI6MjA4MjEwNTg0N30.dsX5GwxV5sro28W3fw6l3s9ISVnlAATLsjIun_oHAmU ';
+    const SUPABASE_URL = 'https://dyqxvnwqyplssfilgdqc.supabase.co';  // ⬅️ PASTE YOUR URL HERE
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5cXh2bndxeXBsc3NmaWxnZHFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1Mjk4NDcsImV4cCI6MjA4MjEwNTg0N30.dsX5GwxV5sro28W3fw6l3s9ISVnlAATLsjIun_oHAmU ';  // ⬅️ PASTE YOUR KEY HERE
     
     // Initialize Supabase
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -1305,19 +1326,24 @@
     }
     
     function showDashboard() {
+      // Update UI with user info
       document.getElementById('userName').textContent = currentUserRole.full_name;
       document.getElementById('userAvatar').textContent = currentUserRole.initials;
       
+      // Show/hide appropriate views
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('dashboardLayout').classList.add('active');
       
+      // Route based on role
       if (currentUserRole.role === 'admin') {
         isAdmin = true;
+        // Hide driver nav, show admin view
         document.querySelectorAll('.nav-item').forEach(item => item.style.display = 'none');
         showView('admin');
         loadAllDriverTickets();
       } else {
         isAdmin = false;
+        // Driver view
         document.querySelectorAll('.nav-item').forEach(item => item.style.display = 'flex');
         document.getElementById('driverBadgeText').textContent = currentUserRole.full_name;
         showView('newTicket');
@@ -1347,10 +1373,21 @@
       }, 4000);
     }
     
+    // Driver codes - LEGACY, NOT USED WITH SUPABASE
+    const driverCodes = {
+      '01': { name: 'Tarrell Thomas', initials: 'TT', sheet: 'Tarrell Thomas' },
+      '02': { name: 'Jelani Graham', initials: 'JG', sheet: 'Jelani Graham' },
+      '13': { name: 'Bridger Booth', initials: 'BB', sheet: 'Bridger Booth' },
+      '17': { name: 'Tristan Booth', initials: 'TB', sheet: 'Tristan Booth' },
+      '00': { name: 'Other', initials: 'OT', sheet: 'Other' }
+    };
+
+    // ===================================================================
     // ===================================================================
     // VIEW MANAGEMENT
     // ===================================================================
     
+    // Show view
     function showView(viewName) {
       document.querySelectorAll('.view-section').forEach(view => {
         view.classList.remove('active');
@@ -1370,6 +1407,7 @@
       }
     }
 
+    // Calculate net tons
     function calculateNetTons() {
       const grossInput = document.getElementById('grossWeight');
       const tareInput = document.getElementById('tareWeight');
@@ -1385,6 +1423,7 @@
       }
     }
 
+    // Format numbers with commas
     function formatNumberWithCommas(input) {
       let value = input.value.replace(/,/g, '');
       
@@ -1395,9 +1434,11 @@
       
       calculateNetTons();
     }
+
+    // Load tickets from localStorage
     
     // ===================================================================
-    // TICKET OPERATIONS
+    // TICKET OPERATIONS - SUPABASE
     // ===================================================================
     
     async function loadTickets() {
@@ -1426,6 +1467,27 @@
       }
     }
 
+    function saveTickets() {
+      // LEGACY - Not used with Supabase
+      const sheetName = currentDriver ? currentDriver.sheet : 'Unknown';
+      localStorage.setItem('b5_tickets_' + sheetName, JSON.stringify(tickets));
+    }
+
+    function loadTickets_OLD() {
+      const stored = localStorage.getItem('b5_tickets_' + currentDriver.sheet);
+      if (stored) {
+        tickets = JSON.parse(stored);
+      } else {
+        tickets = [];
+      }
+    }
+
+    // Save tickets to localStorage
+    function saveTickets() {
+      localStorage.setItem('b5_tickets_' + currentDriver.sheet, JSON.stringify(tickets));
+    }
+
+    // Submit ticket
     document.getElementById('ticketForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       
@@ -1447,6 +1509,7 @@
       showLoading();
       
       try {
+        // Upload photo to Supabase Storage
         const fileName = `${currentUser.id}/${Date.now()}_${ticketNumber}.jpg`;
         const { error: uploadError } = await supabase.storage
           .from('ticket-photos')
@@ -1454,13 +1517,16 @@
 
         if (uploadError) throw uploadError;
 
+        // Get public URL
         const { data: { publicUrl } } = supabase.storage
           .from('ticket-photos')
           .getPublicUrl(fileName);
 
+        // Calculate pay
         const bonusAmount = thirdLoad === 'Yes' ? 10 : 0;
         const ticketPay = 130 + bonusAmount;
 
+        // Insert ticket into database
         const { error: ticketError } = await supabase
           .from('tickets')
           .insert([{
@@ -1482,6 +1548,7 @@
 
         hideLoading();
 
+        // Show success message
         const successMsg = document.getElementById('successMessage');
         if (successMsg) {
           successMsg.textContent = 'Ticket submitted successfully!';
@@ -1491,11 +1558,14 @@
           }, 3000);
         }
 
+        // Reset form
         document.getElementById('ticketForm').reset();
         document.getElementById('ticketDate').valueAsDate = new Date();
 
+        // Reload tickets
         await loadTickets();
 
+        // Scroll to tickets
         document.getElementById('submittedSection').scrollIntoView({ 
           behavior: 'smooth', 
           block: 'start' 
@@ -1508,12 +1578,78 @@
       }
     });
 
+    // OLD Submit ticket - LEGACY
+    function submitTicket_OLD(e) {
+      e.preventDefault();
+      
+      const truckNumber = document.getElementById('truckNumber').value;
+      const ticketNumber = document.getElementById('ticketNumber').value;
+      const ticketDate = document.getElementById('ticketDate').value;
+      const grossWeight = document.getElementById('grossWeight').value;
+      const tareWeight = document.getElementById('tareWeight').value;
+      const netTons = document.getElementById('netTons').value;
+      const thirdLoad = document.getElementById('thirdLoad').value;
+      const routeNotes = document.getElementById('routeNotes').value;
+      
+      // Check if "Other" driver needs to enter name
+      let actualDriverName = currentDriver.name;
+      if (currentDriver.name === 'Other') {
+        actualDriverName = document.getElementById('otherDriverName').value.trim();
+        if (!actualDriverName) {
+          alert('Please enter your full name');
+          return;
+        }
+      }
+      
+      const bonusAmount = thirdLoad === 'Yes' ? 10 : 0;
+      const ticketPay = 130 + bonusAmount;
+      
+      const ticket = {
+        truckNumber,
+        ticketNumber,
+        ticketDate,
+        grossWeight,
+        tareWeight,
+        netTons,
+        thirdLoad,
+        routeNotes,
+        pay: ticketPay,
+        actualDriverName: actualDriverName,
+        timestamp: new Date().toISOString()
+      };
+      
+      tickets.push(ticket);
+      saveTickets();
+      
+      // Show success message
+      const successMsg = document.getElementById('successMessage');
+      successMsg.style.display = 'block';
+      setTimeout(() => {
+        successMsg.style.display = 'none';
+      }, 3000);
+      
+      // Reset form
+      document.getElementById('ticketForm').reset();
+      document.getElementById('ticketDate').valueAsDate = new Date();
+      
+      // Update displays
+      updateDashboard();
+      
+      // Refresh with "This Week" filter
+      filterSubmittedThisWeek();
+      
+      // Scroll to submitted tickets
+      document.getElementById('submittedSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    // Update dashboard
     function updateDashboard() {
       const totalLoads = tickets.length;
       const totalLoadPay = totalLoads * 130;
-      const totalBonusPay = tickets.filter(t => t.third_load === 'Yes').length * 10;
+      const totalBonusPay = tickets.filter(t => t.thirdLoad === 'Yes').length * 10;
       const totalPay = totalLoadPay + totalBonusPay;
       
+      // Calculate total tons
       let totalTonsValue = 0;
       tickets.forEach(ticket => {
         const tons = parseFloat(ticket.net_tons.replace(' tons', '')) || 0;
@@ -1521,6 +1657,7 @@
       });
       const avgTons = totalLoads > 0 ? (totalTonsValue / totalLoads).toFixed(2) : 0;
       
+      // Update stats
       document.getElementById('totalLoads').textContent = totalLoads;
       document.getElementById('loadsChange').textContent = 'This week';
       document.getElementById('totalTons').textContent = totalTonsValue.toFixed(2);
@@ -1528,10 +1665,12 @@
       document.getElementById('weeklyPay').textContent = '$' + totalPay.toLocaleString();
       document.getElementById('payBreakdown').textContent = '$' + totalLoadPay + ' loads + $' + totalBonusPay + ' bonus';
       
+      // Update recent tickets table
       updateRecentTicketsTable();
       updateAllTicketsTable();
     }
 
+    // Update recent tickets table
     function updateRecentTicketsTable() {
       const tbody = document.getElementById('recentTicketsBody');
       tbody.innerHTML = '';
@@ -1547,6 +1686,7 @@
         return;
       }
       
+      // Show last 5 tickets
       const recentTickets = tickets.slice(-5).reverse();
       
       recentTickets.forEach((ticket, index) => {
@@ -1563,7 +1703,9 @@
       });
     }
 
+    // Update all tickets table
     function updateAllTicketsTable() {
+      // Check if there's an active filter
       const startDate = document.getElementById('filterStartDate').value;
       const endDate = document.getElementById('filterEndDate').value;
       
@@ -1574,15 +1716,18 @@
       }
     }
 
+    // Reset week
     function resetWeek() {
       if (confirm('Clear all tickets for this driver? This cannot be undone.')) {
         tickets = [];
+        saveTickets();
         updateDashboard();
         document.getElementById('filterStartDate').value = '';
         document.getElementById('filterEndDate').value = '';
       }
     }
 
+    // Update current week tickets (for submit ticket view)
     function updateCurrentWeekTickets(filteredTickets = null) {
       const tbody = document.getElementById('currentWeekTicketsBody');
       tbody.innerHTML = '';
@@ -1613,9 +1758,10 @@
         `;
       });
       
+      // Update summary
       const totalLoads = displayTickets.length;
       const totalLoadPay = totalLoads * 130;
-      const totalBonusPay = displayTickets.filter(t => t.third_load === 'Yes').length * 10;
+      const totalBonusPay = displayTickets.filter(t => t.thirdLoad === 'Yes').length * 10;
       const totalPay = totalLoadPay + totalBonusPay;
       
       document.getElementById('currentWeekLoads').textContent = totalLoads;
@@ -1626,15 +1772,18 @@
       document.getElementById('currentWeekSummaryBox').style.display = 'block';
     }
 
+    // Filter submitted tickets - Today
     function filterSubmittedToday() {
       const today = new Date().toISOString().split('T')[0];
       const filtered = tickets.filter(t => t.ticket_date === today);
       updateCurrentWeekTickets(filtered);
       
+      // Clear custom date inputs
       document.getElementById('submittedStartDate').value = '';
       document.getElementById('submittedEndDate').value = '';
     }
 
+    // Filter submitted tickets - This Week
     function filterSubmittedThisWeek() {
       const now = new Date();
       const dayOfWeek = now.getDay();
@@ -1651,10 +1800,12 @@
       const filtered = tickets.filter(t => t.ticket_date >= mondayStr && t.ticket_date <= sundayStr);
       updateCurrentWeekTickets(filtered);
       
+      // Clear custom date inputs
       document.getElementById('submittedStartDate').value = '';
       document.getElementById('submittedEndDate').value = '';
     }
 
+    // Filter submitted tickets - This Month
     function filterSubmittedThisMonth() {
       const now = new Date();
       const year = now.getFullYear();
@@ -1667,10 +1818,12 @@
       const filtered = tickets.filter(t => t.ticket_date >= firstDay && t.ticket_date <= lastDayStr);
       updateCurrentWeekTickets(filtered);
       
+      // Clear custom date inputs
       document.getElementById('submittedStartDate').value = '';
       document.getElementById('submittedEndDate').value = '';
     }
 
+    // Filter submitted tickets - Last Month
     function filterSubmittedLastMonth() {
       const now = new Date();
       const year = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
@@ -1684,17 +1837,21 @@
       const filtered = tickets.filter(t => t.ticket_date >= firstDay && t.ticket_date <= lastDayStr);
       updateCurrentWeekTickets(filtered);
       
+      // Clear custom date inputs
       document.getElementById('submittedStartDate').value = '';
       document.getElementById('submittedEndDate').value = '';
     }
 
+    // Filter submitted tickets - All Time
     function filterSubmittedAll() {
       updateCurrentWeekTickets();
       
+      // Clear custom date inputs
       document.getElementById('submittedStartDate').value = '';
       document.getElementById('submittedEndDate').value = '';
     }
 
+    // Filter submitted tickets - Custom Date Range
     function filterSubmittedCustom() {
       const startDate = document.getElementById('submittedStartDate').value;
       const endDate = document.getElementById('submittedEndDate').value;
@@ -1712,6 +1869,7 @@
       updateCurrentWeekTickets(filtered);
     }
 
+    // Event listeners
     document.getElementById('grossWeight').addEventListener('input', function() {
       formatNumberWithCommas(this);
     });
@@ -1720,6 +1878,11 @@
       formatNumberWithCommas(this);
     });
 
+    document.getElementById('driverCode').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') login();
+    });
+
+    // Date filter functions for driver portal
     function filterTickets() {
       const startDate = document.getElementById('filterStartDate').value;
       const endDate = document.getElementById('filterEndDate').value;
@@ -1768,9 +1931,10 @@
         `;
       });
       
+      // Update summary
       const totalLoads = filteredTickets.length;
       const totalLoadPay = totalLoads * 130;
-      const totalBonusPay = filteredTickets.filter(t => t.third_load === 'Yes').length * 10;
+      const totalBonusPay = filteredTickets.filter(t => t.thirdLoad === 'Yes').length * 10;
       const totalPay = totalLoadPay + totalBonusPay;
       
       document.getElementById('summaryLoads').textContent = totalLoads;
@@ -1824,11 +1988,9 @@
       filterTickets();
     }
 
-    // ===================================================================
-    // ADMIN FUNCTIONS
-    // ===================================================================
-
+    // Admin functions
     async function loadAllDriverTickets() {
+      // Load tickets from all drivers (admin view)
       showLoading();
       
       try {
@@ -1839,7 +2001,10 @@
 
         if (error) throw error;
 
+        // Store in global variable
         window.allDriverTickets = data || [];
+        
+        // Display
         filterAdminTickets();
         
       } catch (err) {
@@ -1849,6 +2014,33 @@
       } finally {
         hideLoading();
       }
+    }
+    
+    function loadAllDriverTickets_OLD() {
+      // Load tickets from all drivers
+      const allTickets = [];
+      
+      Object.values(driverCodes).forEach(driver => {
+        const stored = localStorage.getItem('b5_tickets_' + driver.sheet);
+        if (stored) {
+          const driverTickets = JSON.parse(stored);
+          driverTickets.forEach(ticket => {
+            allTickets.push({
+              ...ticket,
+              driverName: driver.name
+            });
+          });
+        }
+      });
+      
+      // Sort by date (newest first)
+      allTickets.sort((a, b) => new Date(b.ticketDate) - new Date(a.ticketDate));
+      
+      // Store in global variable
+      window.allDriverTickets = allTickets;
+      
+      // Display
+      filterAdminTickets();
     }
 
     function filterAdminTickets() {
@@ -1904,9 +2096,10 @@
         `;
       });
       
+      // Update summary
       const totalLoads = filteredTickets.length;
       const totalLoadPay = totalLoads * 130;
-      const totalBonusPay = filteredTickets.filter(t => t.third_load === 'Yes').length * 10;
+      const totalBonusPay = filteredTickets.filter(t => t.thirdLoad === 'Yes').length * 10;
       const totalPay = totalLoadPay + totalBonusPay;
       
       document.getElementById('adminTotalTickets').textContent = totalLoads;
@@ -1964,8 +2157,8 @@
     async function generateInvoice() {
       const startDate = document.getElementById('adminFilterStartDate').value;
       const endDate = document.getElementById('adminFilterEndDate').value;
-      const fuelBase = 3.50;
-      const fuelCurrent = 4.25;
+      const fuelBase = 3.50; // Default fuel base rate
+      const fuelCurrent = 4.25; // Default current fuel rate
       
       if (!startDate || !endDate) {
         showError('Please select a date range first');
@@ -1992,12 +2185,55 @@
         hideLoading();
         alert(`Invoice generated successfully! Invoice ID: ${data}`);
         
+        // Reload tickets to refresh display
         await loadAllDriverTickets();
         
       } catch (err) {
         hideLoading();
         console.error('Error generating invoice:', err);
         showError('Failed to generate invoice: ' + err.message);
+      }
+    }
+    
+    function generateInvoice_OLD() {
+      const startDate = document.getElementById('adminFilterStartDate').value;
+      const endDate = document.getElementById('adminFilterEndDate').value;
+      
+      if (!startDate || !endDate) {
+        alert('Please select a date range first');
+        return;
+      }
+      
+      // Get filtered tickets
+      const driverFilter = document.getElementById('driverFilter').value;
+      let invoiceTickets = window.allDriverTickets || [];
+      
+      if (startDate) {
+        invoiceTickets = invoiceTickets.filter(t => t.ticket_date >= startDate);
+      }
+      
+      if (endDate) {
+        invoiceTickets = invoiceTickets.filter(t => t.ticket_date <= endDate);
+      }
+      
+      if (driverFilter) {
+        invoiceTickets = invoiceTickets.filter(t => t.driverName === driverFilter);
+      }
+      
+      if (invoiceTickets.length === 0) {
+        alert('No tickets found for the selected date range');
+        return;
+      }
+      
+      const totalPay = invoiceTickets.reduce((sum, t) => sum + t.pay, 0);
+      
+      const confirmMsg = `Generate invoice for ${invoiceTickets.length} tickets?\n` +
+                        `Date Range: ${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}\n` +
+                        `Total: $${totalPay.toFixed(2)}`;
+      
+      if (confirm(confirmMsg)) {
+        alert('Invoice generation ready! (Will connect to invoice generator next)');
+        // TODO: Connect to invoice generator
       }
     }
   </script>
